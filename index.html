@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnLab CTF</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    background:#070b12;
+    color:#dce7f5;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+header{
+    background:#0d1420;
+    border-bottom:1px solid #1d2a3b;
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    font-size:25px;
+    font-weight:bold;
+}
+
+.logo span{
+    color:#4ade80;
+}
+
+.container{
+    display:flex;
+    min-height:calc(100vh - 70px);
+}
+
+nav{
+    width:240px;
+    background:#0b111b;
+    border-right:1px solid #1d2a3b;
+    padding:15px;
+}
+
+nav button{
+    width:100%;
+    padding:12px;
+    margin:4px 0;
+    background:transparent;
+    color:#8da0b7;
+    border:0;
+    text-align:left;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+nav button:hover,
+nav button.active{
+    background:#172438;
+    color:white;
+}
+
+main{
+    flex:1;
+    padding:25px;
+    max-width:1100px;
+}
+
+.page{
+    display:none;
+}
+
+.page.active{
+    display:block;
+}
+
+.card{
+    background:#0d1420;
+    border:1px solid #1d2a3b;
+    border-radius:12px;
+    padding:22px;
+    margin-bottom:18px;
+}
+
+h1,h2,h3{
+    margin-top:0;
+}
+
+input,textarea{
+    width:100%;
+    background:#070b12;
+    color:white;
+    border:1px solid #26384e;
+    border-radius:7px;
+    padding:11px;
+    margin:7px 0 12px;
+}
+
+textarea{
+    min-height:100px;
+}
+
+button.action{
+    background:#163522;
+    color:#8ff0aa;
+    border:1px solid #28633e;
+    padding:10px 16px;
+    border-radius:7px;
+    cursor:pointer;
+}
+
+button.action:hover{
+    background:#1b4730;
+}
+
+.output{
+    margin-top:15px;
+    padding:14px;
+    background:#05090f;
+    border:1px solid #1d2a3b;
+    border-radius:7px;
+    white-space:pre-wrap;
+    overflow:auto;
+}
+
+.flag{
+    color:#4ade80;
+    font-family:monospace;
+    font-weight:bold;
+}
+
+.hint{
+    color:#facc15;
+    font-size:13px;
+}
+
+.tag{
+    display:inline-block;
+    background:#172438;
+    color:#38bdf8;
+    padding:4px 8px;
+    border-radius:5px;
+    font-size:12px;
+    margin-right:5px;
+}
+
+.challenge{
+    display:flex;
+    justify-content:space-between;
+    padding:13px;
+    margin:7px 0;
+    border:1px solid #1d2a3b;
+    border-radius:8px;
+}
+
+.done{
+    border-color:#28633e;
+    background:#0d2015;
+}
+
+.score{
+    color:#4ade80;
+    font-size:25px;
+    font-weight:bold;
+}
+
+@media(max-width:750px){
+    .container{
+        flex-direction:column;
+    }
+
+    nav{
+        width:100%;
+        border-right:0;
+        border-bottom:1px solid #1d2a3b;
+    }
+
+    main{
+        padding:15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">Vuln<span>Lab</span> <small>/ CTF</small></div>
+    <div id="session">Sesión: visitante</div>
+</header>
+
+<div class="container">
+
+<nav>
+
+<button class="active" onclick="page('home',this)">🏠 Inicio</button>
+<button onclick="page('login',this)">🔓 Login</button>
+<button onclick="page('xss',this)">🕸️ XSS</button>
+<button onclick="page('idor',this)">🆔 IDOR</button>
+<button onclick="page('traversal',this)">📂 Traversal</button>
+<button onclick="page('upload',this)">📤 Upload</button>
+<button onclick="page('api',this)">🌐 API</button>
+<button onclick="page('access',this)">🔐 Access Control</button>
+<button onclick="page('debug',this)">🐛 Debug</button>
+<button onclick="page('ctf',this)">🚩 CTF</button>
+
+</nav>
+
+<main>
+
+<!-- HOME -->
+
+<section id="home" class="page active">
+
+<div class="card">
+
+<span class="tag">TRAINING LAB</span>
+
+<h1>VulnLab</h1>
+
+<p>
+Laboratorio web vulnerable creado en un único archivo HTML.
+</p>
+
+<p>
+La aplicación contiene vulnerabilidades intencionadas para practicar
+conceptos de seguridad web.
+</p>
+
+<h3>Progreso</h3>
+
+<div class="score">
+<span id="score">0</span> puntos
+</div>
+
+<p>
+Retos completados:
+<span id="completed">0</span>/10
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>Usuarios de prueba</h2>
+
+<pre>
+admin : Admin123!
+alice : alice123
+bob   : password
+</pre>
+
+</div>
+
+</section>
+
+
+<!-- LOGIN -->
+
+<section id="login" class="page">
+
+<div class="card">
+
+<span class="tag">AUTH BYPASS</span>
+<span class="tag">SQL LOGIC</span>
+
+<h2>Login vulnerable</h2>
+
+<input id="username" placeholder="Usuario">
+
+<input id="password" type="password" placeholder="Contraseña">
+
+<button class="action" onclick="login()">Iniciar sesión</button>
+
+<div id="loginResult" class="output"></div>
+
+<p class="hint">
+Pista: piensa en cómo podría manipularse una consulta SQL.
+</p>
+
+</div>
+
+</section>
+
+
+<!-- XSS -->
+
+<section id="xss" class="page">
+
+<div class="card">
+
+<span class="tag">REFLECTED XSS</span>
+
+<h2>Buscador</h2>
+
+<input id="search">
+
+<button class="action" onclick="search()">Buscar</button>
+
+<div id="searchResult" class="output"></div>
+
+<p class="hint">
+Prueba a introducir contenido HTML o JavaScript.
+</p>
+
+</div>
+
+
+<div class="card">
+
+<span class="tag">STORED XSS</span>
+
+<h2>Comentarios</h2>
+
+<textarea id="comment"></textarea>
+
+<button class="action" onclick="comment()">Publicar</button>
+
+<div id="comments" class="output"></div>
+
+</div>
+
+</section>
+
+
+<!-- IDOR -->
+
+<section id="idor" class="page">
+
+<div class="card">
+
+<span class="tag">IDOR</span>
+<span class="tag">ACCESS CONTROL</span>
+
+<h2>Perfil de usuario</h2>
+
+<input id="profileId" value="1">
+
+<button class="action" onclick="profile()">Ver perfil</button>
+
+<div id="profileResult" class="output"></div>
+
+<p class="hint">
+Prueba diferentes identificadores.
+</p>
+
+</div>
+
+</section>
+
+
+<!-- TRAVERSAL -->
+
+<section id="traversal" class="page">
+
+<div class="card">
+
+<span class="tag">PATH TRAVERSAL</span>
+
+<h2>Visor de archivos</h2>
+
+<input id="file">
+
+<button class="action" onclick="readFile()">Leer archivo</button>
+
+<div id="fileResult" class="output"></div>
+
+<p class="hint">
+Prueba utilizando ../
+</p>
+
+</div>
+
+</section>
+
+
+<!-- UPLOAD -->
+
+<section id="upload" class="page">
+
+<div class="card">
+
+<span class="tag">UNRESTRICTED UPLOAD</span>
+
+<h2>Subir archivo</h2>
+
+<input type="file" id="uploadFile">
+
+<button class="action" onclick="upload()">Subir</button>
+
+<div id="uploadResult" class="output"></div>
+
+<p class="hint">
+¿Qué extensiones debería bloquear una aplicación real?
+</p>
+
+</div>
+
+</section>
+
+
+<!-- API -->
+
+<section id="api" class="page">
+
+<div class="card">
+
+<span class="tag">INSECURE API</span>
+
+<h2>API interna</h2>
+
+<input id="endpoint" value="/api/users">
+
+<button class="action" onclick="api()">GET</button>
+
+<div id="apiResult" class="output"></div>
+
+</div>
+
+</section>
+
+
+<!-- ACCESS CONTROL -->
+
+<section id="access" class="page">
+
+<div class="card">
+
+<span class="tag">BROKEN ACCESS CONTROL</span>
+
+<h2>Panel administrativo</h2>
+
+<input id="role" value="user">
+
+<button class="action" onclick="admin()">Acceder</button>
+
+<div id="adminResult" class="output"></div>
+
+<p class="hint">
+El rol se controla desde el cliente.
+</p>
+
+</div>
+
+</section>
+
+
+<!-- DEBUG -->
+
+<section id="debug" class="page">
+
+<div class="card">
+
+<span class="tag">INFORMATION DISCLOSURE</span>
+
+<h2>Debug</h2>
+
+<button class="action" onclick="debug()">Mostrar información</button>
+
+<div id="debugResult" class="output"></div>
+
+</div>
+
+</section>
+
+
+<!-- CTF -->
+
+<section id="ctf" class="page">
+
+<div class="card">
+
+<h2>🚩 Retos</h2>
+
+<div id="challengeList"></div>
+
+</div>
+
+</section>
+
+</main>
+
+</div>
+
+
+<script>
+
+const flags={
+
+login:"FLAG{AUTH_BYPASS_7F2A}",
+
+sql:"FLAG{SQL_LOGIC_6E90}",
+
+xss:"FLAG{REFLECTED_XSS_91BC}",
+
+stored:"FLAG{STORED_XSS_42DE}",
+
+idor:"FLAG{IDOR_ACCESS_3AC9}",
+
+traversal:"FLAG{PATH_TRAVERSAL_8D11}",
+
+upload:"FLAG{UNRESTRICTED_UPLOAD_B7E2}",
+
+api:"FLAG{INSECURE_API_55AF}",
+
+access:"FLAG{BROKEN_ACCESS_12C4}",
+
+debug:"FLAG{INFO_DISCLOSURE_AA71}"
+
+};
+
+
+let state=JSON.parse(
+localStorage.getItem("vulnlab") ||
+'{"done":[],"comments":[],"user":null}'
+);
+
+
+function save(){
+
+localStorage.setItem(
+"vulnlab",
+JSON.stringify(state)
+);
+
+update();
+
+}
+
+
+function complete(id){
+
+if(!state.done.includes(id)){
+
+state.done.push(id);
+
+save();
+
+}
+
+}
+
+
+function update(){
+
+document.getElementById("score").textContent=
+state.done.length*10;
+
+document.getElementById("completed").textContent=
+state.done.length;
+
+document.getElementById("session").textContent=
+"Sesión: "+(state.user||"visitante");
+
+
+let names={
+
+login:"Bypass de autenticación",
+
+sql:"SQL Logic",
+
+xss:"Reflected XSS",
+
+stored:"Stored XSS",
+
+idor:"IDOR",
+
+traversal:"Path Traversal",
+
+upload:"Unrestricted Upload",
+
+api:"API insegura",
+
+access:"Broken Access Control",
+
+debug:"Information Disclosure"
+
+};
+
+
+document.getElementById("challengeList").innerHTML=
+Object.keys(names).map(id=>`
+
+<div class="challenge ${state.done.includes(id)?"done":""}">
+
+<span>
+${state.done.includes(id)?"✅":"⬜"}
+${names[id]}
+</span>
+
+<span>
+${state.done.includes(id)?
+"COMPLETADO":"10 puntos"}
+</span>
+
+</div>
+
+`).join("");
+
+}
+
+
+function page(id,button){
+
+document.querySelectorAll(".page")
+.forEach(x=>x.classList.remove("active"));
+
+document.getElementById(id)
+.classList.add("active");
+
+document.querySelectorAll("nav button")
+.forEach(x=>x.classList.remove("active"));
+
+button.classList.add("active");
+
+}
+
+
+function login(){
+
+let u=document.getElementById("username").value;
+
+let p=document.getElementById("password").value;
+
+let result=document.getElementById("loginResult");
+
+
+let users={
+
+admin:"Admin123!",
+
+alice:"alice123",
+
+bob:"password"
+
+};
+
+
+if(users[u]===p){
+
+state.user=u;
+
+save();
+
+result.innerHTML=
+"Login correcto.<br>Bienvenido "+u;
+
+complete("login");
+
+return;
+
+}
+
+
+/*
+Simulación de una lógica SQL vulnerable.
+No ejecuta SQL real.
+*/
+
+if(
+/('|")\s*(or|and)\s*('|")?1('|")?\s*=\s*('|")?1/i.test(u) ||
+/--/.test(u)
+){
+
+state.user="admin";
+
+save();
+
+result.innerHTML=
+"Bypass conseguido.<br><br>"+
+"<span class='flag'>"+
+flags.sql+
+"</span>";
+
+complete("sql");
+
+return;
+
+}
+
+
+result.textContent=
+"Usuario o contraseña incorrectos.";
+
+}
+
+
+function search(){
+
+let value=document.getElementById("search").value;
+
+let result=document.getElementById("searchResult");
+
+
+if(
+/<script|javascript:|onerror\s*=|onload\s*=/i
+.test(value)
+){
+
+result.innerHTML=
+"Patrón XSS detectado.<br><br>"+
+"<span class='flag'>"+
+flags.xss+
+"</span>";
+
+complete("xss");
+
+}else{
+
+result.innerHTML=
+"Resultados para: "+value;
+
+}
+
+}
+
+
+function comment(){
+
+let value=document.getElementById("comment").value;
+
+if(!value)return;
+
+state.comments.push(value);
+
+save();
+
+let html=state.comments.map(
+x=>escapeHtml(x)
+).join("<hr>");
+
+if(
+/<script|javascript:|onerror\s*=|onload\s*=/i
+.test(value)
+){
+
+document.getElementById("comments").innerHTML=
+html+
+"<br><br>"+
+"<span class='flag'>"+
+flags.stored+
+"</span>";
+
+complete("stored");
+
+}else{
+
+document.getElementById("comments").innerHTML=
+html;
+
+}
+
+}
+
+
+function escapeHtml(text){
+
+return text.replace(
+/[&<>"']/g,
+
+function(c){
+
+return {
+
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#039;"
+
+}[c];
+
+});
+
+}
+
+
+function profile(){
+
+let id=document.getElementById("profileId").value;
+
+let users={
+
+1:{
+user:"alice",
+role:"user",
+email:"alice@vulnlab.local"
+},
+
+2:{
+user:"bob",
+role:"user",
+email:"bob@vulnlab.local",
+secret:"FLAG{IDOR_ACCESS_3AC9}"
+},
+
+3:{
+user:"admin",
+role:"admin",
+email:"admin@vulnlab.local",
+secret:"Administrador"
+}
+
+};
+
+
+if(users[id]){
+
+document.getElementById("profileResult")
+.textContent=
+JSON.stringify(users[id],null,2);
+
+if(id!="1"){
+
+document.getElementById("profileResult")
+.textContent+=
+"\n\n"+flags.idor;
+
+complete("idor");
+
+}
+
+}else{
+
+document.getElementById("profileResult")
+.textContent=
+"Perfil no encontrado.";
+
+}
+
+}
+
+
+function readFile(){
+
+let file=document.getElementById("file").value;
+
+let result=document.getElementById("fileResult");
+
+
+let files={
+
+"readme.txt":
+"Bienvenido a VulnLab.",
+
+"notes.txt":
+"Este visor debería validar las rutas.",
+
+"config/app.txt":
+"debug=true",
+
+"../secret.txt":
+flags.traversal,
+
+"../../secret.txt":
+flags.traversal,
+
+"../../../secret.txt":
+flags.traversal
+
+};
+
+
+if(files[file]){
+
+result.textContent=files[file];
+
+if(file.includes(".."))
+complete("traversal");
+
+}else if(file.includes("..")){
+
+result.textContent=
+"Traversal detectado.\n\n"+
+flags.traversal;
+
+complete("traversal");
+
+}else{
+
+result.textContent=
+"Archivo no encontrado.";
+
+}
+
+}
+
+
+function upload(){
+
+let file=
+document.getElementById("uploadFile")
+.files[0];
+
+let result=
+document.getElementById("uploadResult");
+
+
+if(!file){
+
+result.textContent=
+"Selecciona un archivo.";
+
+return;
+
+}
+
+
+result.textContent=
+"Archivo recibido: "+
+file.name+
+"\nTamaño: "+
+file.size+
+" bytes";
+
+
+if(
+/\.(php|phtml|jsp|asp|aspx|html|svg)$/i
+.test(file.name)
+){
+
+result.textContent+=
+"\n\nExtensión potencialmente peligrosa aceptada.\n"+
+flags.upload;
+
+complete("upload");
+
+}
+
+}
+
+
+function api(){
+
+let endpoint=
+document.getElementById("endpoint").value;
+
+let result=
+document.getElementById("apiResult");
+
+
+if(
+endpoint.includes("/users") ||
+endpoint.includes("admin")
+){
+
+result.textContent=
+JSON.stringify({
+
+status:200,
+
+users:[
+
+{
+id:1,
+username:"alice",
+password:"alice123",
+role:"user"
+},
+
+{
+id:2,
+username:"bob",
+password:"password",
+role:"user"
+},
+
+{
+id:3,
+username:"admin",
+password:"Admin123!",
+role:"admin"
+}
+
+],
+
+debug:true
+
+},null,2)+
+"\n\n"+
+flags.api;
+
+complete("api");
+
+}else{
+
+result.textContent=
+JSON.stringify({
+
+status:404,
+error:"Endpoint not found"
+
+},null,2);
+
+}
+
+}
+
+
+function admin(){
+
+let role=
+document.getElementById("role").value;
+
+let result=
+document.getElementById("adminResult");
+
+
+if(role.toLowerCase()==="admin"){
+
+result.innerHTML=
+"<b>Panel administrativo abierto.</b>"+
+"<br><br>"+
+"Usuarios: 3"+
+"<br>"+
+"Maintenance: enabled"+
+"<br><br>"+
+"<span class='flag'>"+
+flags.access+
+"</span>";
+
+complete("access");
+
+}else{
+
+result.textContent=
+"403 Forbidden.";
+
+}
+
+}
+
+
+function debug(){
+
+document.getElementById("debugResult")
+.textContent=
+
+`DEBUG=true
+ENVIRONMENT=development
+VERSION=0.4.2
+FRAMEWORK=VulnLabHTML
+INTERNAL_API=/api/users
+ADMIN_HINT=change client-side role
+
+${flags.debug}`;
+
+complete("debug");
+
+}
+
+
+update();
+
+</script>
+
+</body>
+</html>
